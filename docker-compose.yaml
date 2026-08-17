@@ -1,0 +1,70 @@
+
+version: '3.8'
+
+services:
+  checkout-api:
+    build: ./checkout-api
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./checkout-api/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:3000/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+   
+
+  db:
+    image: postgres:16-alpine3.23
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: freshcart
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./checkout-api/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  
+  web:
+    build: ./storefront
+    ports:
+      - "8080:8080"
+
+    env_file:
+      - ./storefront/.env
+    depends_on:
+     checkout-api:
+      condition: service_healthy
+
+    restart: unless-stopped
+
+volumes:
+ db_data:
+
+
+networks:
+  default:
+    name: freshcart_network
+
+
+
+        
+
+  
