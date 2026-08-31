@@ -50,14 +50,7 @@ jobs:
             -t freshcart-checkout-api:latest \
             -t freshcart-checkout-api:${{ github.sha }} .
 
-      - name: scan for vulnerabilities
-        uses: docker/scout-action@v1
-        with:
-          command: cves
-          image: freshcart-checkout-api:latest
-          only-severity: critical,high
-          exit-code: true
-
+     
       - name: scan with trivy
         uses: aquasecurity/trivy-action@master
         with:
