@@ -68,6 +68,7 @@ jobs:
           scanners: 'vuln'
           ignore-unfixed: true
           format: 'table'
+          trivyignores: checkout-api/.trivyignore
          
         env:
             TRIVY_DISABLE_VEX_NOTICE: 'true'
