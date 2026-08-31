@@ -7,6 +7,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -20,7 +24,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: '20.x'
+          node-version: '24.x'
           cache: 'npm'
           cache-dependency-path: 'checkout-api/package-lock.json'
 
@@ -29,9 +33,7 @@ jobs:
 
     
 
-  
-
-    
+ 
 
   build:
     needs: test
@@ -43,6 +45,60 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+     
 
       - name: Build Docker image
-        run: docker build -t freshcart-checkout-api .
+        run: |
+          docker build \
+            -t freshcart-checkout-api:latest \
+            -t freshcart-checkout-api:${{ github.sha }} .
+
+     
+      - name: scan with trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: freshcart-checkout-api:latest
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+          scanners: 'vuln'
+          ignore-unfixed: true
+          format: 'table'
+          trivyignores: checkout-api/.trivyignore
+         
+        env:
+            TRIVY_DISABLE_VEX_NOTICE: 'true'
+
+
+      - name: Configure AWS credentials
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
+          aws-region: eu-north-1
+
+      - name: Login to ECR
+        if: github.ref == 'refs/heads/main'
+        uses: aws-actions/amazon-ecr-login@v2
+
+
+      - name: Push to ECR
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag freshcart-checkout-api:latest \
+            055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:latest
+          docker tag freshcart-checkout-api:${{ github.sha }} \
+            055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}
+          docker push 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:latest
+          docker push 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}
+
+
+  
+       

@@ -1,4 +1,4 @@
-FROM node:24-alpine3.21 AS deps
+FROM node:26-alpine3.24 AS deps
 
 WORKDIR /app
 
@@ -16,7 +16,7 @@ RUN npm run build
 
 
 
-FROM node:24-alpine3.21
+FROM node:26-alpine3.24
 
 WORKDIR /app
 
