@@ -79,7 +79,7 @@ jobs:
 
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'
-        uses: aws-actions/configure-aws-credential@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
           aws-region: eu-north-1
