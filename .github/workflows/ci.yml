@@ -50,6 +50,10 @@ jobs:
             -t freshcart-checkout-api:latest \
             -t freshcart-checkout-api:${{ github.sha }} .
 
+
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+
      
       - name: scan with trivy
         uses: aquasecurity/trivy-action@master
@@ -61,6 +65,6 @@ jobs:
           ignore-unfixed: true
           format: 'table'
          
-          env:
+        env:
             TRIVY_DISABLE_VEX_NOTICE: 'true'
     
