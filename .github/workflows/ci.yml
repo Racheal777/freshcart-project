@@ -76,6 +76,16 @@ jobs:
         env:
             TRIVY_DISABLE_VEX_NOTICE: 'true'
 
+      - name: Debug OIDC
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Ref: ${{ github.ref }}"
+          echo "Repo: ${{ github.repository }}"
+          echo "Event: ${{ github.event_name }}"
+          curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=sts.amazonaws.com" | \
+            cut -d. -f2 | base64 -d 2>/dev/null | python3 -m json.tool || echo "Could not decode token"
+
 
       - name: Configure AWS credentials
         if: github.ref == 'refs/heads/main'
@@ -83,6 +93,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
           aws-region: eu-north-1
+          audience: sts.amazonaws.com
 
       - name: Login to ECR
         if: github.ref == 'refs/heads/main'
