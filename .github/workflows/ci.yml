@@ -104,4 +104,57 @@ jobs:
 
 
   
-       
+  deploy-to-staging:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
+           aws-region: eu-north-1
+           audience: sts.amazonaws.com
+
+       - name: Deploy to staging
+         run: |
+           aws ssm send-command \
+             --instance-ids "${{ secrets.STAGING_INSTANCE_ID }}" \
+             --document-name "AWS-RunShellScript" \
+             --parameters 'commands=[
+               "aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 055505191746.dkr.ecr.eu-north-1.amazonaws.com",
+               "docker pull 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}",
+               "docker stop checkout-api || true",
+               "docker rm checkout-api || true",
+               "docker run -d --name checkout-api --network freshcart --restart unless-stopped -p 3000:3000 -e DATABASE_URL=postgresql://postgres:postgres@db:5432/freshcart 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}"
+             ]'
+
+
+  deploy-to-production:
+    if: github.ref == 'refs/heads/main'
+    needs: deploy-to-staging
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v4
+         with:
+           role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
+           aws-region: eu-north-1
+           audience: sts.amazonaws.com
+
+       - name: Deploy to production
+         run: |
+           aws ssm send-command \
+             --instance-ids "${{ secrets.PRODUCTION_INSTANCE_ID }}" \
+             --document-name "AWS-RunShellScript" \
+             --parameters 'commands=[
+               "aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 055505191746.dkr.ecr.eu-north-1.amazonaws.com",
+               "docker pull 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}",
+               "docker stop checkout-api || true",
+               "docker rm checkout-api || true",
+               "docker run -d --name checkout-api --network freshcart --restart unless-stopped -p 3000:3000 -e DATABASE_URL=postgresql://postgres:postgres@db:5432/freshcart 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}"
+             ]'
