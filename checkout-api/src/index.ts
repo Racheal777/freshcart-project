@@ -17,7 +17,7 @@ app.use((_req, res, next) => {
   next();
 });
 
-app.use('/api',healthRouter);
+app.use(healthRouter);
 app.use(productsRouter);
 app.use(ordersRouter);
 
