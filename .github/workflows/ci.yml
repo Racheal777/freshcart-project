@@ -158,3 +158,5 @@ jobs:
                "docker rm checkout-api || true",
                "docker run -d --name checkout-api --network freshcart --restart unless-stopped -p 3000:3000 -e DATABASE_URL=postgresql://postgres:postgres@db:5432/freshcart 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}"
              ]'
+
+             
