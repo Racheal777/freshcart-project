@@ -18,8 +18,8 @@ app.use((_req, res, next) => {
 });
 
 app.use(healthRouter);
-app.use(productsRouter);
-app.use(ordersRouter);
+app.use('/api',productsRouter);
+app.use('/api',ordersRouter);
 
 app.listen(port, () => {
   console.log(`FreshCart checkout-api listening on port ${port}`);

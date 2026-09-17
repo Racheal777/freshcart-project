@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storefront
+  namespace: freshcart
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: storefront
+  
+  template:
+    metadata:
+      labels:
+        app: storefront
+
+    spec:
+      containers:
+        - name: storefront
+          image: storefront:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+
+          

@@ -23,7 +23,7 @@ function isValidItems(items: unknown): items is OrderItemInput[] {
   );
 }
 
-ordersRouter.post("/api/orders", async (req, res) => {
+ordersRouter.post("/orders", async (req, res) => {
   const { customerName, customerEmail, items } = req.body ?? {};
 
   if (typeof customerName !== "string" || customerName.trim() === "") {
@@ -85,7 +85,7 @@ ordersRouter.post("/api/orders", async (req, res) => {
   }
 });
 
-ordersRouter.get("/api/orders/:id", async (req, res) => {
+ordersRouter.get("/orders/:id", async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     res.status(400).json({ error: "Order id must be an integer." });

@@ -3,7 +3,7 @@ import { pool } from "../db";
 
 export const productsRouter = Router();
 
-productsRouter.get("/api/products", async (req, res) => {
+productsRouter.get("/products", async (req, res) => {
   const search = typeof req.query.search === "string" ? req.query.search.trim() : "";
 
   try {
@@ -20,7 +20,7 @@ productsRouter.get("/api/products", async (req, res) => {
   }
 });
 
-productsRouter.get("/api/products/:id", async (req, res) => {
+productsRouter.get("/products/:id", async (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isInteger(id)) {
     res.status(400).json({ error: "Product id must be an integer." });
