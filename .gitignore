@@ -3,3 +3,42 @@ dist/
 .env
 *.log
 .DS_Store
+
+
+# Terraform working directories / provider cache
+**/.terraform/*
+
+# Terraform state files (contain sensitive data, resource IDs, etc.)
+*.tfstate
+*.tfstate.*
+
+
+
+# Variable files usually contain secrets or environment-specific values.
+# terraform.tfvars.example is intentionally kept as a template.
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# Saved plan output (binary + JSON) — regenerate locally with:
+#   terraform plan -out=tfplan && terraform show -json tfplan > tfplan.json
+tfplan
+tfplan.json
+*.tfplan
+
+# Override files (local-only resource overrides)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Terraform CLI config (may contain credentials/tokens)
+.terraformrc
+terraform.rc
+
+# Infracost cache/output
+.infracost/
+infracost-base.json
+
+# macOS
+.DS_Store

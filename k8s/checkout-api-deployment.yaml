@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: checkout-api
-          image: checkout-api:v3
-          imagePullPolicy: IfNotPresent
+          image: 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:v4
+          
           ports:
             - containerPort: 3000
 
@@ -29,4 +29,30 @@ spec:
                 secretKeyRef:
                   name: checkout-api-secrets
                   key: database-url
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 256Mi
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 3000
+
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /livez
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+
+     
            

@@ -11,3 +11,13 @@ healthRouter.get("/healthz", async (_req, res) => {
     res.status(503).json({ status: "unavailable", error: (error as Error).message });
   }
 });
+
+
+healthRouter.get("/livez", async (_req, res) => {
+  try {
+   
+    res.status(200).json({ status: "alive" });
+  } catch (error) {
+    res.status(503).json({ status: "unavailable", error: (error as Error).message });
+  }
+});
