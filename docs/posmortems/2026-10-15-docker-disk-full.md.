@@ -1,0 +1,68 @@
+# Postmortem: Containers stuck at "Starting" because Docker's disk was full
+
+**Date of incident:** October 12 to October 15, 2026
+**Author:** Racheal Kuranchie
+**Status:** Action items in progress
+
+## 1. Summary
+
+Over four days, Docker containers in the FreshCart local environment repeatedly got stuck at "Starting" and never came up. This happened three times. The first two times, restarting Docker Desktop made the problem go away for a while. On the third time, investigation showed that Docker's build cache had grown to 22.84 GB, filling Docker's disk. Clearing the build cache freed 21.4 GB and fixed the problem.
+
+## 2. Impact
+
+- Environment: local FreshCart environment (no real customers affected)
+- Services affected at different times: checkout-api, Grafana, Alloy
+- While Grafana was down, dashboards and alerts were unavailable, so the monitoring itself was not working
+- Time lost: roughly 15 to 30 minutes per occurrence, three occurrences
+
+## 3. Timeline
+
+| Time | What happened |
+|---|---|
+| Oct 12, 11:17 | checkout-api stuck at "Starting" for over 14 minutes |
+| Oct 12, 11:19 | `docker compose ps` showed checkout-api as "Created", never started. Fixed by restarting Docker Desktop. Cause not investigated |
+| Oct 12, 19:28 | Grafana and Alloy stuck at "Starting". Fixed by restarting Docker Desktop again. Cause not investigated |
+| Oct 15, 08:27 | Grafana stuck at "Restarting" for about 100 seconds and never came up |
+| Oct 15, 08:29 | `docker compose ps`: Grafana missing from the list of running containers |
+| Oct 15, 08:29 | `docker stats --no-stream`: about 0.9 GB of 3.8 GB memory used. Memory ruled out as the cause |
+| Oct 15, 08:31 | `docker system df`: build cache at 22.84 GB, with 21.4 GB reclaimable |
+| Oct 15, 08:55 | `docker builder prune` freed 21.4 GB. Build cache down to 1.44 GB. Docker Desktop restarted, all containers came up |
+
+## 4. Root cause
+
+Using the 5 Whys:
+
+1. **Why did containers get stuck?** Docker's disk was nearly full.
+2. **Why was it full?** Build cache from many image rebuilds had grown to 22.84 GB.
+3. **Why did it keep growing?** Docker keeps build cache forever by default, and nothing was cleaning it up.
+4. **Why did nobody notice before it broke?** There was no alert or check for Docker disk usage. The problem was found by a person, not by an alert.
+
+**Contributing factor:** The problem happened twice before the cause was investigated. Each time, restarting Docker Desktop hid the symptom, so the real cause stayed hidden.
+
+## 5. What went well
+
+- Investigation followed the evidence: checked container state, then memory, then disk, instead of guessing
+- Memory was ruled out quickly with `docker stats`, saving time
+- The cleanup was safe: `docker builder prune` only removed build cache, and did not touch volumes, so Postgres data and Grafana dashboards were kept
+- The fix was verified by running `docker system df` again after the cleanup
+
+## 6. What went badly
+
+- The same problem happened three times before the root cause was found
+- There was no monitoring for Docker disk usage
+- While Grafana was down, the dashboards and alerts that should catch problems were also down
+
+## 7. Action items
+
+| # | Action | Owner | By when | Status |
+|---|---|---|---|---|
+| 1 | Automate weekly build cache cleanup with `docker builder prune -f --filter "until=168h"` | Racheal | Oct 20, 6pm | In progress |
+| 2 | Add a check that warns when Docker disk usage passes a set limit | Racheal | To be set | Not started |
+| 3 | Write a runbook: "Container stuck at Starting", with `docker compose ps`, `docker stats` and `docker system df` as the first steps | Racheal | To be set | Not started |
+| 4 | Team rule: if the same problem happens twice, investigate the cause before restarting a third time | Racheal | To be set | Not started |
+
+## 8. Lessons learned
+
+- Restarting can hide a problem without fixing it. If something happens twice, look for the cause.
+- A good timeline comes from evidence, not memory. The evidence showed three occurrences, not one.
+- Monitoring needs to cover the platform it runs on. When Docker struggled, Grafana went down with it.
