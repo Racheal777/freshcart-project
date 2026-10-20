@@ -1,0 +1,28 @@
+// 1. Find the running containers, using the Docker intercom
+discovery.docker "containers" {
+  host = "unix:///var/run/docker.sock"
+}
+
+// 2. Give each log a "service" label, from the compose service name
+discovery.relabel "names" {
+  targets = []
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service"
+  }
+}
+
+// 3. Read the logs from those containers
+loki.source.docker "containers" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.containers.targets
+  relabel_rules = discovery.relabel.names.rules
+  forward_to    = [loki.write.local.receiver]
+}
+
+// 4. Push them to Loki
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
