@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: freshcart
+
+resources:
+  - checkout-api-deployment.yaml
+  - checkout-api-service.yaml
+  - checkout-api-hpa.yaml
+  - storefront-deployment.yaml
+  - storefront-service.yaml
+  - gateway.yaml
+  - httproute.yaml
+  - networkpolicy-checkout.yaml
+  - pipeline-rbac.yaml
