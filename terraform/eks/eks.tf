@@ -8,6 +8,22 @@ module "eks" {
     cluster_endpoint_public_access = true
     enable_cluster_creator_admin_permissions = true
 
+    access_entries = {
+      github_actions = {
+        principal_arn = "arn:aws:iam::055505191746:role/github-actions-ecr-push"
+
+        policy_associations = {
+          deploy = {
+            policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSEditPolicy"
+            access_scope = {
+              type       = "namespace"
+              namespaces = ["freshcart"]
+            }
+          }
+        }
+      }
+    }
+
     vpc_id = module.vpc.vpc_id
     subnet_ids = module.vpc.private_subnets
 

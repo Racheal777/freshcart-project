@@ -108,7 +108,7 @@ jobs:
 
   
   deploy-to-staging:
-    if: github.ref == 'refs/heads/main'
+    if: false
     needs: build
     runs-on: ubuntu-latest
     environment: staging
@@ -136,7 +136,7 @@ jobs:
 
 
   deploy-to-production:
-    if: github.ref == 'refs/heads/main'
+    if: false
     needs: deploy-to-staging
     runs-on: ubuntu-latest
     environment: production
@@ -162,3 +162,30 @@ jobs:
                "docker run -d --name checkout-api --network freshcart --restart unless-stopped -p 3000:3000 -e DATABASE_URL=postgresql://postgres:postgres@db:5432/freshcart 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }}"
              ]'
 
+
+
+  deploy-to-eks:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::055505191746:role/github-actions-ecr-push
+          aws-region: eu-north-1
+          audience: sts.amazonaws.com
+
+      - name: Connect to the cluster
+        run: aws eks update-kubeconfig --region eu-north-1 --name freshcart-eks-cluster
+
+      - name: Deploy the new image
+        run: |
+          kubectl set image deployment/checkout-api \
+            checkout-api=055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:${{ github.sha }} \
+            -n freshcart
+
+      - name: Wait until the new pods are healthy
+        run: kubectl rollout status deployment/checkout-api -n freshcart --timeout=180s
