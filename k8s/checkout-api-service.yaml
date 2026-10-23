@@ -4,6 +4,8 @@ kind: Service
 metadata:
   name: checkout-api
   namespace: freshcart
+  labels:
+    app: checkout-api
 
 spec:
   type: ClusterIP
@@ -11,6 +13,7 @@ spec:
     app: checkout-api
 
   ports:
-    - port: 3000
+    - name: http
+      port: 3000
       targetPort: 3000
 

@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: checkout-api
-          image: 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:v4
+          image: 055505191746.dkr.ecr.eu-north-1.amazonaws.com/freshcart-checkout-api:3a33385dfe832bb6d22ecef29a53472865ddfe68
           
           ports:
             - containerPort: 3000

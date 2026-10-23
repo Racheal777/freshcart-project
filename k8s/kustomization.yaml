@@ -13,3 +13,4 @@ resources:
   - httproute.yaml
   - networkpolicy-checkout.yaml
   - pipeline-rbac.yaml
+  - checkout-api-servicemonitor.yaml
