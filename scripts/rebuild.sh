@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 2.
+# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 3 (logs).
 # Run from anywhere: ./scripts/rebuild.sh
 set -euo pipefail
 
@@ -10,6 +10,8 @@ REGION="eu-north-1"
 CLUSTER="freshcart-eks-cluster"
 ENVOY_GATEWAY_VERSION="1.9.2"
 KUBE_PROMETHEUS_STACK_VERSION="92.11.0"
+LOKI_VERSION="7.6.0"
+ALLOY_VERSION="1.16.0"
 
 echo "==> 1. Building the cluster with Terraform (about 15 to 20 minutes)"
 terraform -chdir=terraform/eks init -input=false
@@ -31,10 +33,24 @@ kubectl wait --for=condition=Available deployment/envoy-gateway \
 
 echo "==> 5. Installing Prometheus and Grafana ($KUBE_PROMETHEUS_STACK_VERSION)"
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
+helm repo add grafana https://grafana.github.io/helm-charts --force-update
 helm repo update
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --version "$KUBE_PROMETHEUS_STACK_VERSION" \
   -n monitoring --create-namespace
+
+echo "==> 5b. Installing Loki $LOKI_VERSION and Alloy $ALLOY_VERSION (logs)"
+helm upgrade --install loki grafana/loki \
+  --version "$LOKI_VERSION" \
+  -n monitoring \
+  -f monitoring/helm/loki-values.yaml
+helm upgrade --install alloy grafana/alloy \
+  --version "$ALLOY_VERSION" \
+  -n monitoring \
+  -f monitoring/helm/alloy-values.yaml
+kubectl apply -f monitoring/k8s/loki-datasource.yaml
+kubectl rollout restart deployment monitoring-grafana -n monitoring
+kubectl rollout status deployment monitoring-grafana -n monitoring --timeout=180s
 
 echo "==> 6. Creating the GatewayClass (platform level)"
 kubectl apply -f k8s/platform/gatewayclass.yaml
