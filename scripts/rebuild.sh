@@ -100,3 +100,5 @@ kubectl get secret monitoring-grafana -n monitoring \
 echo
 echo "Open Grafana with:"
 echo "  kubectl port-forward svc/monitoring-grafana -n monitoring 3002:80"
+
+
