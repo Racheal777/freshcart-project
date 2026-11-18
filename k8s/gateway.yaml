@@ -5,6 +5,11 @@ metadata:
   namespace: freshcart
 spec:
   gatewayClassName: eg
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: freshcart-proxy
   listeners:
     - name: http
       protocol: HTTP

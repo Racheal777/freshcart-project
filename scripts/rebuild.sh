@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 3 (logs).
+# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 4 (traces).
 # Run from anywhere: ./scripts/rebuild.sh
 set -euo pipefail
 
@@ -12,6 +12,7 @@ ENVOY_GATEWAY_VERSION="1.9.2"
 KUBE_PROMETHEUS_STACK_VERSION="92.11.0"
 LOKI_VERSION="7.6.0"
 ALLOY_VERSION="1.16.0"
+TEMPO_VERSION="1.24.4"
 
 echo "==> 1. Building the cluster with Terraform (about 15 to 20 minutes)"
 terraform -chdir=terraform/eks init -input=false
@@ -49,6 +50,13 @@ helm upgrade --install alloy grafana/alloy \
   -n monitoring \
   -f monitoring/helm/alloy-values.yaml
 kubectl apply -f monitoring/k8s/loki-datasource.yaml
+
+echo "==> 5c. Installing Tempo $TEMPO_VERSION (traces)"
+helm upgrade --install tempo grafana/tempo \
+  --version "$TEMPO_VERSION" \
+  -n monitoring \
+  -f monitoring/helm/tempo-values.yaml
+kubectl apply -f monitoring/k8s/tempo-datasource.yaml
 kubectl rollout restart deployment monitoring-grafana -n monitoring
 kubectl rollout status deployment monitoring-grafana -n monitoring --timeout=180s
 
@@ -100,5 +108,3 @@ kubectl get secret monitoring-grafana -n monitoring \
 echo
 echo "Open Grafana with:"
 echo "  kubectl port-forward svc/monitoring-grafana -n monitoring 3002:80"
-
-

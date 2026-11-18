@@ -29,6 +29,20 @@ spec:
                 secretKeyRef:
                   name: checkout-api-secrets
                   key: database-url
+            - name: NODE_OPTIONS
+              value: "--require @opentelemetry/auto-instrumentations-node/register"
+            - name: OTEL_SERVICE_NAME
+              value: checkout-api
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://tempo.monitoring.svc.cluster.local:4318
+            - name: OTEL_TRACES_EXPORTER
+              value: otlp
+            - name: OTEL_METRICS_EXPORTER
+              value: none
+            - name: OTEL_LOGS_EXPORTER
+              value: none
+            - name: OTEL_NODE_RESOURCE_DETECTORS
+              value: env,host,os
 
           resources:
             requests:
