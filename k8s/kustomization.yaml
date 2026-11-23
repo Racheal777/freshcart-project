@@ -15,3 +15,4 @@ resources:
   - pipeline-rbac.yaml
   - checkout-api-servicemonitor.yaml
   - envoyproxy-tracing.yaml
+  - checkout-api-slo-alerts.yaml

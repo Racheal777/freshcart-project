@@ -1,0 +1,75 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: checkout-api-slo-alerts
+  namespace: freshcart
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: checkout-api-slo
+      rules:
+
+        # 🟢 AVAILABILITY: fast burn, page now
+        - alert: CheckoutApiAvailabilityFastBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy", status_code=~"5.."}[1h]))
+              /
+              sum(rate(http_requests_total{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy"}[1h]))
+            ) / 0.005 > 14.4
+          for: 2m
+          labels:
+            severity: page
+          annotations:
+            summary: "checkout-api is failing customers: availability budget burning over 14.4x. Check recent deploys first."
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+
+        # 🟢 AVAILABILITY: slow burn, the quiet leak
+        - alert: CheckoutApiAvailabilitySlowBurn
+          expr: |
+            (
+              sum(rate(http_requests_total{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy", status_code=~"5.."}[6h]))
+              /
+              sum(rate(http_requests_total{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy"}[6h]))
+            ) / 0.005 > 6
+          for: 15m
+          labels:
+            severity: ticket
+          annotations:
+            summary: "checkout-api availability budget slowly leaking (over 6x for 6 hours)."
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+
+        # ⏱️ LATENCY: fast burn, page now
+        - alert: CheckoutApiLatencyFastBurn
+          expr: |
+            (
+              1 - (
+                sum(rate(http_request_duration_seconds_bucket{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy", le="2.0"}[1h]))
+                /
+                sum(rate(http_request_duration_seconds_count{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy"}[1h]))
+              )
+            ) / 0.005 > 14.4
+          for: 2m
+          labels:
+            severity: page
+          annotations:
+            summary: "checkout-api is too slow: latency budget burning over 14.4x. Check recent deploys first."
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+
+                # ⏱️ LATENCY: slow burn, the quiet leak
+        - alert: CheckoutApiLatencySlowBurn
+          expr: |
+            (
+              1 - (
+                sum(rate(http_request_duration_seconds_bucket{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy", le="2.0"}[6h]))
+                /
+                sum(rate(http_request_duration_seconds_count{job="checkout-api", route!~"/healthz|/livez|/api/slow|/api/flaky|/api/busy"}[6h]))
+              )
+            ) / 0.005 > 6
+          for: 15m
+          labels:
+            severity: ticket
+          annotations:
+            summary: "checkout-api latency budget slowly leaking (over 6x for 6 hours)."
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 4 (traces).
+# Rebuilds the whole FreshCart platform on EKS, up to the end of Phase 5 (SLO alerts and email).
 # Run from anywhere: ./scripts/rebuild.sh
 set -euo pipefail
 
@@ -32,13 +32,29 @@ helm upgrade --install eg oci://docker.io/envoyproxy/gateway-helm \
 kubectl wait --for=condition=Available deployment/envoy-gateway \
   -n envoy-gateway-system --timeout=300s
 
-echo "==> 5. Installing Prometheus and Grafana ($KUBE_PROMETHEUS_STACK_VERSION)"
+echo "==> 5a. Creating the Gmail app password Secret for Alertmanager"
+kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
+# Typed in, never saved in git. Keeps only letters, so spaces or invisible characters can't sneak in
+read -rsp "Paste the Gmail app password for alerts, then press Enter: " SMTP_PW
+echo
+SMTP_PW=$(printf '%s' "$SMTP_PW" | tr -cd 'a-zA-Z')
+if [ "${#SMTP_PW}" -ne 16 ]; then
+  echo "That password has ${#SMTP_PW} letters, but Gmail app passwords have 16. Stopping."
+  exit 1
+fi
+kubectl create secret generic alertmanager-smtp \
+  --from-literal=password="$SMTP_PW" \
+  -n monitoring --dry-run=client -o yaml | kubectl apply -f -
+unset SMTP_PW
+
+echo "==> 5. Installing Prometheus, Grafana and Alertmanager ($KUBE_PROMETHEUS_STACK_VERSION)"
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts --force-update
 helm repo add grafana https://grafana.github.io/helm-charts --force-update
 helm repo update
 helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
   --version "$KUBE_PROMETHEUS_STACK_VERSION" \
-  -n monitoring --create-namespace
+  -n monitoring --create-namespace \
+  -f monitoring/helm/kube-prometheus-stack-values.yaml
 
 echo "==> 5b. Installing Loki $LOKI_VERSION and Alloy $ALLOY_VERSION (logs)"
 helm upgrade --install loki grafana/loki \
