@@ -23,7 +23,7 @@ spec:
             severity: page
           annotations:
             summary: "checkout-api is failing customers: availability budget burning over 14.4x. Check recent deploys first."
-            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/checkout-api-slo-burn.md"
 
         # 🟢 AVAILABILITY: slow burn, the quiet leak
         - alert: CheckoutApiAvailabilitySlowBurn
@@ -38,7 +38,7 @@ spec:
             severity: ticket
           annotations:
             summary: "checkout-api availability budget slowly leaking (over 6x for 6 hours)."
-            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/checkout-api-slo-burn.md"
 
         # ⏱️ LATENCY: fast burn, page now
         - alert: CheckoutApiLatencyFastBurn
@@ -55,7 +55,7 @@ spec:
             severity: page
           annotations:
             summary: "checkout-api is too slow: latency budget burning over 14.4x. Check recent deploys first."
-            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/checkout-api-slo-burn.md"
 
                 # ⏱️ LATENCY: slow burn, the quiet leak
         - alert: CheckoutApiLatencySlowBurn
@@ -72,4 +72,4 @@ spec:
             severity: ticket
           annotations:
             summary: "checkout-api latency budget slowly leaking (over 6x for 6 hours)."
-            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/api-slow-burn-rate.md"
+            runbook_url: "https://github.com/Racheal777/freshcart-project/blob/main/docs/runbooks/checkout-api-slo-burn.md"
