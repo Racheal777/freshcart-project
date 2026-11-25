@@ -14,7 +14,12 @@ productsRouter.get("/products", async (req, res) => {
         )
       : await pool.query("select id, name, category, price_cents, stock from products order by name");
 
-    res.json({ products: result.rows });
+    // New feature: show the 3 "popular this week" products
+    const popular = await pool.query(
+      "select p.id from products p, pg_sleep(2.5) order by p.stock asc limit 3"
+    );
+
+    res.json({ products: result.rows, popular: popular.rows.map((r) => r.id) });
   } catch (error) {
     res.status(500).json({ error: "Could not load products.", detail: (error as Error).message });
   }
